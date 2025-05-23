@@ -40,7 +40,7 @@ export function useAuth() {
       });
 
       setState({ user: response.data, isLoading: false, error: null });
-    } catch (error) {
+    } catch {
       setState({ user: null, isLoading: false, error: 'Authentication failed' });
       localStorage.removeItem('token');
     }
@@ -53,7 +53,7 @@ export function useAuth() {
       localStorage.setItem('token', response.data.token);
       setState({ user: response.data.user, isLoading: false, error: null });
       router.push('/dashboard');
-    } catch (error) {
+    } catch {
       setState({
         ...state,
         isLoading: false,

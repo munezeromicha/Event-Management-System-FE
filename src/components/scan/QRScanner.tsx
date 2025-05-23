@@ -17,11 +17,11 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onScanFailure }) =
   const processingRef = useRef<boolean>(false);
 
   useEffect(() => {
-    // Initialize scanner with optimized settings
+
     const html5QrcodeScanner = new Html5QrcodeScanner(
       "qr-reader",
       { 
-        fps: 5, // Lower FPS for better performance
+        fps: 5, 
         qrbox: { width: 250, height: 250 },
         aspectRatio: 1.0,
         showTorchButtonIfSupported: true,
@@ -32,9 +32,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onScanFailure }) =
 
     scannerRef.current = html5QrcodeScanner;
 
-    // Set up success handler with debouncing to prevent duplicate processing
     const successHandler = async (decodedText: string) => {
-      // Prevent processing if already handling a scan or duplicate in short time
       if (processingRef.current || lastScannedCode.current === decodedText) {
         return;
       }
@@ -48,10 +46,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onScanFailure }) =
         setIsLoading(true);
         setIsScanning(false);
         
-        // Parse QR code data to validate it's proper JSON
         try {
-          // Just validate the JSON structure but don't enforce specific fields here
-          // The parent component will handle API communication
           JSON.parse(decodedText);
         } catch (error) {
           console.error('Failed to parse QR code data:', error);
@@ -74,10 +69,11 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onScanFailure }) =
           }
         }
         
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
         console.error('Processing error:', error);
-        toast.error(error.message || 'An unexpected error occurred');
-        onScanFailure?.(error.message || 'An unexpected error occurred');
+        toast.error(errorMessage);
+        onScanFailure?.(errorMessage);
         resetProcessing();
       } finally {
         setIsLoading(false);

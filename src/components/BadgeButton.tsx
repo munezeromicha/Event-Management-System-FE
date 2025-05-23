@@ -29,35 +29,60 @@ export default function BadgeButton({ registrationId, status }: BadgeButtonProps
         toast.error('Authentication token not found')
         return
       }
-      
-      // First generate the badge with a fetch request that includes auth headers
-      const generateResponse = await fetch(`http://localhost:3000/api/badges/registrations/${registrationId}`, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
+
+      // First check if the badge is already generated
+      const checkResponse = await fetch(
+        `http://localhost:3000/api/badges/registrations/${registrationId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Accept': 'application/json'
+          }
         }
-      })
-      
-      if (!generateResponse.ok) {
-        const errorData = await generateResponse.json()
-        toast.error(errorData.message || 'Failed to generate badge')
-        return
+      )
+
+      // If checking fails, generate the badge first
+      if (!checkResponse.ok) {
+        toast.loading('Generating badge...')
       }
       
-      // After successful generation, download the badge using fetch with proper file handling
-      const downloadResponse = await fetch(`http://localhost:3000/api/badges/registrations/${registrationId}?download=true`, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
+      // Now attempt to download the badge
+      const response = await fetch(
+        `http://localhost:3000/api/badges/registrations/${registrationId}?download=true`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Accept': 'application/pdf'
+          }
         }
-      })
+      )
       
-      if (!downloadResponse.ok) {
-        toast.error('Failed to download badge')
+      if (!response.ok) {
+        // Try to get detailed error information
+        let errorMessage = 'Failed to download badge'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.message || errorMessage
+          console.error('Badge download error:', errorData)
+        } catch {
+          console.error('Badge download error, could not parse response:', response.statusText)
+        }
+        
+        toast.error(errorMessage)
+        return
+      }
+
+      // Check if the response is actually a PDF
+      const contentType = response.headers.get('Content-Type')
+      if (!contentType || !contentType.includes('application/pdf')) {
+        console.error('Invalid content type:', contentType)
+        toast.error('Invalid badge format received')
         return
       }
       
       // Get filename from Content-Disposition header if available
-      const contentDisposition = downloadResponse.headers.get('Content-Disposition')
-      let filename = 'badge.pdf'
+      const contentDisposition = response.headers.get('Content-Disposition')
+      let filename = `badge-${registrationId}.pdf`
       
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
@@ -67,7 +92,13 @@ export default function BadgeButton({ registrationId, status }: BadgeButtonProps
       }
       
       // Get the blob from the response
-      const blob = await downloadResponse.blob()
+      const blob = await response.blob()
+      
+      // Verify the blob is not empty
+      if (blob.size === 0) {
+        toast.error('Received empty badge file')
+        return
+      }
       
       // Create a URL for the blob
       const url = window.URL.createObjectURL(blob)
@@ -88,7 +119,7 @@ export default function BadgeButton({ registrationId, status }: BadgeButtonProps
       toast.success('Badge downloaded successfully')
     } catch (error) {
       console.error('Badge download error:', error)
-      toast.error('Failed to download badge')
+      toast.error('Failed to download badge. Please try again.')
     } finally {
       setLoading(false)
     }

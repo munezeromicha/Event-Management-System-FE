@@ -6,14 +6,10 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Cookies from "js-cookie";
 import Link from "next/link";
-import {
-  LockClosedIcon,
-  CalendarIcon,
-  UserGroupIcon,
-  ShieldCheckIcon,
-} from "@heroicons/react/24/outline";
+import { LockClosedIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import logo from "../../../public/images/RNIT_Logo.png";
+
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -22,33 +18,11 @@ export default function LoginPage() {
   useEffect(() => {
     setMounted(true);
 
+    // Check if user is already logged in with admin authToken
     const token = Cookies.get("authToken");
     if (token) {
       router.push("/dashboard");
     }
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (typeof window !== "undefined") {
-        const blob = document.getElementById("blob");
-        if (blob) {
-          const x = e.clientX - window.innerWidth / 2;
-          const y = e.clientY - window.innerHeight / 2;
-
-          blob.animate(
-            {
-              transform: `translate(${x * 0.05}px, ${y * 0.05}px)`,
-            },
-            { duration: 3000, fill: "forwards" }
-          );
-        }
-      }
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-    };
   }, [router]);
 
   const handleLogin = async (data: {
@@ -82,10 +56,13 @@ export default function LoginPage() {
         const cookieOptions = {
           secure: process.env.NODE_ENV === "production",
           sameSite: "strict" as const,
-          expires: data.rememberMe ? 7 : undefined,
+          expires: data.rememberMe ? 7 : undefined, // 7 days if remember me is checked
         };
 
+        // Store token in cookies as "authToken" (for admin users)
         Cookies.set("authToken", result.token, cookieOptions);
+        
+        // No need to use localStorage - we're only using cookies
       }
 
       toast.success("Successfully signed in!", { id: "login" });
@@ -112,90 +89,80 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col relative overflow-hidden">
-      <div
-        id="blob"
-        className="absolute w-96 h-96 bg-gradient-to-r from-gray-400 to-gray-500 rounded-full filter blur-3xl opacity-30 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse"
-      ></div>
+    <div className="min-h-screen bg-white flex flex-col relative overflow-hidden">
+      {/* Top decorative header */}
+      <div className="absolute top-0 left-0 right-0 h-16 md:h-24 bg-[#000060]"></div>
 
-      <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-[0.03] pointer-events-none"></div>
+      {/* Side decorative element */}
+      <div className="absolute left-0 top-16 md:top-24 bottom-0 w-32 md:w-48 lg:w-64 bg-[#E1FAFA] opacity-70 -skew-x-6 transform origin-top-right"></div>
 
-      <div className="absolute top-0 left-0 p-6 z-10">
-        <Link
-          href="/"
-          className="text-3xl cursor-pointer font-bold text-white hover:text-blue-200 transition-colors flex items-center gap-2 group"
-        >
-          <div className="bg-white bg-opacity-20 p-2 rounded-lg group-hover:bg-opacity-30 transition-all duration-300">
-            <Image src={logo} alt="RNIT Logo" className="w-16 h-16" />
+      {/* Logo header */}
+      <div className="relative pt-4 px-6 z-10">
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="relative w-12 h-12 md:w-16 md:h-16 bg-white rounded-full shadow-lg p-1 transition-all duration-300 group-hover:shadow-xl">
+            <Image
+              src={logo}
+              alt="RNIT Logo"
+              className="w-full h-full object-contain"
+              priority
+            />
           </div>
-          <span className="flex items-baseline">
-            <span className="font-extrabold">RNIT</span>
-            <span className="ml-2 font-light">Events</span>
-          </span>
+          <div className="flex flex-col text-white">
+            <span className="flex items-center md:text-2xl font-bold">
+              <span className="font-extrabold">Rwanda National</span>
+            </span>
+            <span className="text-sm md:text-2xl -mt-1 font-extrabold">
+              Investment Trust Ltd
+            </span>
+          </div>
         </Link>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-4 z-10">
+      <div className="flex-1 flex items-center justify-center p-4 z-10 mt-8 lg:mt-0">
         <div
           id="login-card"
-          className="max-w-md w-full space-y-8 bg-white bg-opacity-95 backdrop-blur-md p-8 rounded-xl shadow-2xl border border-white border-opacity-20 transition-all duration-500 animate-fadeIn"
+          className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-[#E1FAFA] overflow-hidden transition-all duration-500"
         >
-          <div className="flex flex-col items-center">
-            <div className="bg-blue-600 p-4 rounded-full shadow-lg mb-4 transform transition-transform hover:rotate-12">
-              <LockClosedIcon className="h-10 w-10 text-white" />
+          {/* Card header */}
+          <div className="bg-[#000060] p-6 text-white">
+            <div className="flex items-center mb-4">
+              <div className="bg-white/20 p-3 rounded-full mr-4">
+                <LockClosedIcon className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold">Admin Login</h2>
+                <p className="text-sm text-white/80">
+                  Enter your credentials to access the dashboard
+                </p>
+              </div>
             </div>
-            <h2 className="text-3xl font-bold text-center text-gray-800">
-              Admin Login
-            </h2>
-            <p className="mt-2 text-sm text-center text-gray-600">
-              Enter your credentials to access the dashboard
-            </p>
           </div>
 
-          <LoginForm onSubmit={handleLogin} isLoading={isLoading} />
+          {/* Card body */}
+          <div className="p-6 md:p-8">
+            <LoginForm onSubmit={handleLogin} isLoading={isLoading} />
 
-          <div className="pt-4 border-t border-gray-200">
-            <p className="text-center text-sm text-gray-600">
-              Need help? Contact{" "}
-              <a
-                href="mailto:info@rnit.rw"
-                className="text-blue-600 hover:underline"
-              >
-                info@rnit.rw
-              </a>
-            </p>
+            <div className="pt-6 border-t border-[#E1FAFA] mt-6">
+              <p className="text-center text-sm text-gray-600">
+                Need help? Contact{" "}
+                <a
+                  href="mailto:info@rnit.rw"
+                  className="text-[#000060] font-medium hover:underline"
+                >
+                  info@rnit.rw
+                </a>
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 bg-black bg-opacity-30 backdrop-blur-sm z-10">
-        <div className="flex items-center text-white space-x-3 transition-all duration-300 hover:bg-gray-900 hover:bg-opacity-10 p-3 rounded-lg">
-          <UserGroupIcon className="h-6 w-6 flex-shrink-0" />
-          <div>
-            <h3 className="font-medium">Event Management</h3>
-            <p className="text-xs text-gray-300">
-              Manage attendees and registrations
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center text-white space-x-3 transition-all duration-300 hover:bg-gray-900 hover:bg-opacity-10 p-3 rounded-lg">
-          <CalendarIcon className="h-6 w-6 flex-shrink-0" />
-          <div>
-            <h3 className="font-medium">Schedule Events</h3>
-            <p className="text-xs text-gray-300">
-              Create and organize event schedules
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center text-white space-x-3 transition-all duration-300 hover:bg-gray-900 hover:bg-opacity-10 p-3 rounded-lg">
-          <ShieldCheckIcon className="h-6 w-6 flex-shrink-0" />
-          <div>
-            <h3 className="font-medium">Secure Access</h3>
-            <p className="text-xs text-gray-300">
-              Role-based permissions and security
-            </p>
-          </div>
-        </div>
+      {/* Footer */}
+      <div className="p-4 text-center text-sm text-gray-500 mt-auto">
+        <p>
+          © {new Date().getFullYear()} Rwanda National Investment Trust. All
+          rights reserved.
+        </p>
       </div>
     </div>
   );

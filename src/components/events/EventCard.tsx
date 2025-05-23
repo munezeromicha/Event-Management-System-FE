@@ -1,5 +1,6 @@
 import { CalendarIcon, ClockIcon, MapPinIcon, UsersIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
+import Image from 'next/image';
 
 export interface Event {
   id: string;
@@ -27,10 +28,12 @@ export function EventCard({ event, onClick }: EventCardProps) {
       onClick={onClick}
     >
       <div className="relative h-48">
-        <img
+        <Image
           src={event.imageUrl}
           alt={event.title}
-          className="w-full h-full object-cover"
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
         {isFullyBooked && (
           <div className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">

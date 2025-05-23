@@ -1,8 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { Modal } from '@/components/ui/Modal';
+import React, { useState, useEffect, useCallback } from 'react';
+import { PlusIcon, PencilIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Input } from '@/components/ui/Input';
 import toast from 'react-hot-toast';
 import Cookies from 'js-cookie';
@@ -20,6 +19,48 @@ interface Event {
   financialSupportOption: boolean;
 }
 
+// Enhanced Modal Component with Blur Background
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+}
+
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Blur Background Overlay */}
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-md"
+        onClick={onClose}
+      />
+      
+      {/* Modal Content */}
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-gray-200">
+        {/* Modal Header */}
+        <div className="bg-[#000060] text-white px-6 py-4 rounded-t-2xl flex justify-between items-center">
+          <h2 className="text-xl font-semibold">{title}</h2>
+          <button
+            onClick={onClose}
+            className="text-white hover:text-gray-300 transition-colors duration-200 p-1 hover:bg-white/10 rounded-full"
+            aria-label="Close modal"
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
+        
+        {/* Modal Body */}
+        <div className="p-6">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,19 +77,7 @@ export default function EventsPage() {
     financialSupportOption: false,
   });
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
-
-  const getAuthHeaders = () => {
-    const token = Cookies.get('authToken');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    };
-  };
-
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       const response = await fetch('http://localhost:3000/api/events', {
         headers: getAuthHeaders()
@@ -62,6 +91,18 @@ export default function EventsPage() {
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
+
+  const getAuthHeaders = () => {
+    const token = Cookies.get('authToken');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -185,7 +226,7 @@ export default function EventsPage() {
               resetForm();
               setIsModalOpen(true);
             }}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            className="bg-[#000060] cursor-pointer text-white px-6 py-3 rounded-lg hover:bg-[#000080] transition-colors duration-200 flex items-center gap-2 shadow-lg"
           >
             <PlusIcon className="h-5 w-5" />
             Create Event
@@ -195,14 +236,14 @@ export default function EventsPage() {
         {isLoading ? (
           <div className="animate-pulse space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 bg-gray-800 rounded-lg" />
+              <div key={i} className="h-20 bg-gray-200 rounded-lg" />
             ))}
           </div>
         ) : (
-          <div className="bg-card rounded-lg shadow-lg">
+          <div className="bg-white rounded-lg shadow-lg border border-gray-200">
             <div className="w-full">
               <table className="w-full table-fixed border-collapse">
-                <thead className="bg-gray-800">
+                <thead className="bg-[#000060]">
                   <tr>
                     <th className="px-3 py-3 text-left text-xs font-medium text-white uppercase tracking-wider w-1/5">Name</th>
                     <th className="px-3 py-3 text-left text-xs font-medium text-white uppercase tracking-wider w-1/12">Type</th>
@@ -213,16 +254,16 @@ export default function EventsPage() {
                     <th className="px-3 py-3 text-center text-xs font-medium text-white uppercase tracking-wider w-1/12">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-card divide-y divide-gray-700">
+                <tbody className="bg-white divide-y divide-gray-200">
                   {events.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-gray-400">
+                      <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                         No events found. Create your first event!
                       </td>
                     </tr>
                   ) : (
                     events.map((event) => (
-                      <tr key={event.eventId} className="hover:bg-gray-800/50">
+                      <tr key={event.eventId} className="hover:bg-gray-50 transition-colors duration-150">
                         <td className="px-3 py-4">
                           <div className="text-sm font-medium text-gray-900 truncate">{event.name}</div>
                           <div className="text-sm text-gray-500 truncate">{event.description}</div>
@@ -252,14 +293,14 @@ export default function EventsPage() {
                           <div className="flex items-center justify-center space-x-2">
                             <button
                               onClick={() => handleEdit(event)}
-                              className="text-blue-400 hover:text-blue-300 transition-colors duration-200"
+                              className="text-[#000060] hover:text-[#000080] transition-colors duration-200 p-1 hover:bg-gray-100 rounded"
                               title="Edit event"
                             >
                               <PencilIcon className="h-5 w-5" />
                             </button>
                             <button
                               onClick={() => handleDelete(event.eventId)}
-                              className="text-red-400 hover:text-red-300 transition-colors duration-200"
+                              className="text-red-600 hover:text-red-800 transition-colors duration-200 p-1 hover:bg-red-50 rounded"
                               title="Delete event"
                             >
                               <TrashIcon className="h-5 w-5" />
@@ -283,7 +324,7 @@ export default function EventsPage() {
           }}
           title={editingEvent ? 'Edit Event' : 'Create Event'}
         >
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <Input
               label="Event Name"
               name="name"
@@ -291,7 +332,7 @@ export default function EventsPage() {
               onChange={handleInputChange}
               required
               placeholder="Enter event name"
-              className="text-gray-600"
+              className="text-gray-900 bg-gray-50 border-gray-300 focus:border-[#000060] focus:ring-[#000060]"
             />
             <Input
               label="Event Type"
@@ -300,7 +341,7 @@ export default function EventsPage() {
               onChange={handleInputChange}
               required
               placeholder="Enter event type"
-              className="text-gray-600"
+              className="text-gray-900 bg-gray-50 border-gray-300 focus:border-[#000060] focus:ring-[#000060]"
             />
             <div className="grid grid-cols-2 gap-4">
               <Input
@@ -310,7 +351,7 @@ export default function EventsPage() {
                 value={formData.date}
                 onChange={handleInputChange}
                 required
-                className="text-gray-600"
+                className="text-gray-900 bg-gray-50 border-gray-300 focus:border-[#000060] focus:ring-[#000060]"
               />
               <Input
                 type="time"
@@ -319,7 +360,7 @@ export default function EventsPage() {
                 value={formData.time}
                 onChange={handleInputChange}
                 required
-                className="text-gray-600"
+                className="text-gray-900 bg-gray-50 border-gray-300 focus:border-[#000060] focus:ring-[#000060]"
               />
             </div>
             <Input
@@ -329,19 +370,19 @@ export default function EventsPage() {
               onChange={handleInputChange}
               required
               placeholder="Enter event location"
-              className="text-gray-600"
+              className="text-gray-900 bg-gray-50 border-gray-300 focus:border-[#000060] focus:ring-[#000060]"
             />
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-900 mb-2">
                 Description
               </label>
               <textarea
                 name="description"
-                rows={3}
+                rows={4}
                 value={formData.description}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 bg-white border border-gray-700 rounded-md text-gray-600 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#000060] focus:border-[#000060] transition-colors duration-200"
                 placeholder="Enter event description"
               />
             </div>
@@ -354,37 +395,37 @@ export default function EventsPage() {
               required
               min="1"
               placeholder="Enter maximum capacity"
-              className="text-gray-600"
+              className="text-gray-900 bg-gray-50 border-gray-300 focus:border-[#000060] focus:ring-[#000060]"
             />
-            <div className="flex items-center">
+            <div className="flex items-center p-4 bg-gray-50 rounded-lg">
               <input
                 title="Financial Support Available"
                 type="checkbox"
                 name="financialSupportOption"
                 checked={formData.financialSupportOption}
                 onChange={handleCheckboxChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-700 rounded bg-gray-300"
+                className="h-4 w-4 text-[#000060] focus:ring-[#000060] border-gray-300 rounded"
               />
-              <label className="ml-2 block text-sm text-gray-600">
+              <label className="ml-3 block text-sm font-medium text-gray-900">
                 Financial Support Available
               </label>
             </div>
-            <div className="flex justify-end gap-4 pt-4">
+            <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
               <button
                 type="button"
                 onClick={() => {
                   setIsModalOpen(false);
                   resetForm();
                 }}
-                className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600"
+                className="px-6 py-2 cursor-pointer text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                className="px-6 py-2 cursor-pointer text-sm font-medium text-white bg-[#000060] rounded-md hover:bg-[#000080] transition-colors duration-200 shadow-sm"
               >
-                {editingEvent ? 'Update' : 'Create'}
+                {editingEvent ? 'Update Event' : 'Create Event'}
               </button>
             </div>
           </form>
